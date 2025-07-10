@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
+using TourGuide.LibrairiesWrappers;
 using TourGuide.LibrairiesWrappers.Interfaces;
 using TourGuide.Services.Interfaces;
 using TourGuide.Users;
@@ -94,18 +95,41 @@ public class TourGuideService : ITourGuideService
         return visitedLocation;
     }
 
-    public async Task<IEnumerable<Attraction>> GetNearByAttractions(VisitedLocation visitedLocation)
+    public async Task<IEnumerable<NearByAttraction>> GetNearByAttractions(VisitedLocation visitedLocation, User user)
     {
-        List<Attraction> nearbyAttractions = new ();
-        foreach (var attraction in await _gpsUtil.GetAttractions())
-        {
-            if (await _rewardsService.IsWithinAttractionProximity(attraction, visitedLocation.Location))
-            {
-                nearbyAttractions.Add(attraction);
-            }
-        }
+        var userLocation = await GetUserLocation(user);
+        var attractions = await _gpsUtil.GetAttractions();
 
-        return nearbyAttractions;
+        // Step 1: Calculate distances concurrently
+        var distanceTasks = attractions.Select(async attraction =>
+        {
+            var attractionLocation = new Location(attraction.Latitude, attraction.Longitude);
+            var distance = await _rewardsService.GetDistance(attractionLocation, userLocation.Location);
+            return (attraction, distance);
+        });
+
+        var allAttractionsWithDistance = (await Task.WhenAll(distanceTasks)).ToList();
+
+        // Step 2: Take top 5 closest attractions
+        var shortList = allAttractionsWithDistance.OrderBy(a => a.distance).Take(5).ToList();
+
+        // Step 3: Get rewards concurrently
+        var rewardTasks = shortList.Select(async nearByAttraction =>
+        {
+            var rewardWrapper = new RewardCentralWrapper(); // Consider reusing if it's expensive
+            var reward = await rewardWrapper.GetAttractionRewardPoints(
+                nearByAttraction.attraction.AttractionId, user.UserId);
+            return new NearByAttraction(
+                nearByAttraction.attraction,
+                userLocation.Location,
+                nearByAttraction.distance,
+                reward
+            );
+        });
+
+        var shortListWithRewards = (await Task.WhenAll(rewardTasks)).ToList();
+
+        return shortListWithRewards;
     }
 
     private void AddShutDownHook()
@@ -136,7 +160,7 @@ public class TourGuideService : ITourGuideService
     {
         for (int i = 0; i < 3; i++)
         {
-            var visitedLocation = new VisitedLocation(user.UserId, new Locations(GenerateRandomLatitude(), GenerateRandomLongitude()), GetRandomTime());
+            var visitedLocation = new VisitedLocation(user.UserId, new Location(GenerateRandomLatitude(), GenerateRandomLongitude()), GetRandomTime());
            await user.AddToVisitedLocations(visitedLocation);
         }
     }

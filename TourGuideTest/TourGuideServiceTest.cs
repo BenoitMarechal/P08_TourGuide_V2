@@ -85,14 +85,14 @@ namespace TourGuideTest
             Assert.Equal(user.UserId, visitedLocation.UserId);
         }
 
-        [Fact(Skip = "Not yet implemented")]
+        [Fact]
         public async Task GetNearbyAttractions()
         {
             _fixture.Initialize(0);
             var user = new User(Guid.NewGuid(), "jon", "000", "jon@tourGuide.com");
             var visitedLocation =await _fixture.TourGuideService.TrackUserLocation(user);
 
-            IEnumerable<Attraction> attractions = await _fixture.TourGuideService.GetNearByAttractions(visitedLocation);
+            IEnumerable<NearByAttraction> attractions = await _fixture.TourGuideService.GetNearByAttractions(visitedLocation, user);
 
             _fixture.TourGuideService.Tracker.StopTracking();
 

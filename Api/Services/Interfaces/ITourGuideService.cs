@@ -11,7 +11,7 @@ namespace TourGuide.Services.Interfaces
 
         Task AddUser(User user);
         Task<IEnumerable<User>> GetAllUsers();
-        Task<IEnumerable<Attraction>> GetNearByAttractions(VisitedLocation visitedLocation);
+        Task<IEnumerable<NearByAttraction>> GetNearByAttractions(VisitedLocation visitedLocation, User user);
         Task<IEnumerable<Provider>> GetTripDeals(User user);
            Task<User> GetUser(string userName);
         Task<VisitedLocation> GetUserLocation(User user);

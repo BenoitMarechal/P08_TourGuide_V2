@@ -55,7 +55,7 @@ public class RewardsService : IRewardsService
         }
     }
 
-    public async Task<bool> IsWithinAttractionProximity(Attraction attraction, Locations location)
+    public async Task<bool> IsWithinAttractionProximity(Attraction attraction, Location location)
     {
         var distance = await GetDistance(attraction, location);
         Console.WriteLine(distance);
@@ -75,7 +75,7 @@ public class RewardsService : IRewardsService
         return await _rewardsCentral.GetAttractionRewardPoints(attraction.AttractionId, user.UserId);
     }
 
-    public async Task<double> GetDistance(Locations loc1, Locations loc2)
+    public async Task<double> GetDistance(Location loc1, Location loc2)
     {
         double lat1 = Math.PI * loc1.Latitude / 180.0;
         double lon1 = Math.PI * loc1.Longitude / 180.0;

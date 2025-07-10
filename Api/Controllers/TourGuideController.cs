@@ -41,7 +41,7 @@ public class TourGuideController : ControllerBase
     // The reward points for visiting each Attraction.
     //    Note: Attraction reward points can be gathered from RewardsCentral
     [HttpGet("getNearbyAttractions")]
-    public async Task<ActionResult <IEnumerable<Attraction>>> GetNearbyAttractions([FromQuery] string userName)
+    public async Task<ActionResult <IEnumerable<NearByAttraction>>> GetNearbyAttractions([FromQuery] string userName)
     {
         if (string.IsNullOrWhiteSpace(userName))
             return BadRequest("Username is required");
@@ -51,7 +51,10 @@ public class TourGuideController : ControllerBase
             return NotFound($"User '{userName}' not found");
 
         var visitedLocation =await _tourGuideService.GetUserLocation(user);
-        var attractions =await _tourGuideService.GetNearByAttractions(visitedLocation);
+ 
+
+        var attractions =await _tourGuideService.GetNearByAttractions(visitedLocation, user);
+
         return Ok(attractions);
     }
 
