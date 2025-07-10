@@ -48,6 +48,7 @@ public class TourGuideService : ITourGuideService
 
     public async Task<IEnumerable<UserReward>> GetUserRewards(User user)
     {
+        await _rewardsService.CalculateRewards(user);
         return user.UserRewards;
     }
 

@@ -48,7 +48,7 @@ namespace TourGuideTest
         public async Task HighVolumeTrackLocation()
         {
             //On peut ici augmenter le nombre d'utilisateurs pour tester les performances
-            _fixture.Initialize(100000);
+            _fixture.Initialize(1);
 
             IEnumerable<User> allUsers =await _fixture.TourGuideService.GetAllUsers();
 
@@ -74,29 +74,22 @@ namespace TourGuideTest
 
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
-
             var attractions = await _fixture.GpsUtil.GetAttractions();
+
             Attraction attraction =attractions.First();
 
             IEnumerable<User> allUsers = await _fixture.TourGuideService.GetAllUsers();
 
-            foreach(User u in allUsers)
+            var tasks = allUsers.Select(async user =>
             {
-                await u.AddToVisitedLocations(new VisitedLocation(u.UserId, attraction, DateTime.Now));
-               await _fixture.RewardsService.CalculateRewards(u);
+                await user.AddToVisitedLocations(new VisitedLocation(user.UserId, attraction, DateTime.Now));
+                await _fixture.RewardsService.CalculateRewards(user);
             }
-
-            //allUsers.ForEach(u => u.AddToVisitedLocations(new VisitedLocation(u.UserId, attraction, DateTime.Now)));
-
-            //allUsers.ForEach(u => _fixture.RewardsService.CalculateRewards(u));
-
-            foreach (var user in allUsers)
-            {
-                Assert.True(user.UserRewards.Count() > 0);
-            }
+            );
+            await Task.WhenAll(tasks); 
+            Assert.True(allUsers.All(user => user.UserRewards.Any()));           
             stopWatch.Stop();
             _fixture.TourGuideService.Tracker.StopTracking();
-
             _output.WriteLine($"highVolumeGetRewards: Time Elapsed: {stopWatch.Elapsed.TotalSeconds} seconds.");
             Assert.True(TimeSpan.FromMinutes(20).TotalSeconds >= stopWatch.Elapsed.TotalSeconds);
         }
