@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TripPricer;
 
-public class TripPricerTask : Task<List<Provider>>
+public class TripPricerTask : Task<Task<IEnumerable<Provider>>>
 {
     private readonly Guid _attractionId;
     private readonly string _apiKey;
@@ -23,7 +23,7 @@ public class TripPricerTask : Task<List<Provider>>
         _children = children;
         _nightsStay = nightsStay;
     }
-    public async Task<List<Provider>> ExecuteAsync()
+    public async Task<IEnumerable<Provider>> ExecuteAsync()
     {
         var tripPricer = new TripPricer();
         return await Task.Run(() => tripPricer.GetPrice(_apiKey, _attractionId, _adults, _children, _nightsStay, 5));

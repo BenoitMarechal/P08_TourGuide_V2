@@ -18,10 +18,17 @@ public class TourGuideController : ControllerBase
     }
 
     [HttpGet("getLocation")]
-    public ActionResult<VisitedLocation> GetLocation([FromQuery] string userName)
+    public async Task<ActionResult<VisitedLocation>> GetLocation([FromQuery] string userName)
     {
-        var location = _tourGuideService.GetUserLocation(GetUser(userName));
-        return Ok(location);
+        if (string.IsNullOrWhiteSpace(userName))
+            return BadRequest("Username is required");
+
+        var user = await GetUser(userName);
+        if (user == null)
+            return NotFound($"User '{userName}' not found");
+
+        var location = await _tourGuideService.GetUserLocation(user);
+        return Ok(location);  
     }
 
     // TODO: Change this method to no longer return a List of Attractions.
@@ -34,29 +41,53 @@ public class TourGuideController : ControllerBase
     // The reward points for visiting each Attraction.
     //    Note: Attraction reward points can be gathered from RewardsCentral
     [HttpGet("getNearbyAttractions")]
-    public ActionResult<List<Attraction>> GetNearbyAttractions([FromQuery] string userName)
+    public async Task<ActionResult <IEnumerable<Attraction>>> GetNearbyAttractions([FromQuery] string userName)
     {
-        var visitedLocation = _tourGuideService.GetUserLocation(GetUser(userName));
-        var attractions = _tourGuideService.GetNearByAttractions(visitedLocation);
+        if (string.IsNullOrWhiteSpace(userName))
+            return BadRequest("Username is required");
+
+        var user = await GetUser(userName);
+        if (user == null)
+            return NotFound($"User '{userName}' not found");
+
+        var visitedLocation =await _tourGuideService.GetUserLocation(user);
+        var attractions =await _tourGuideService.GetNearByAttractions(visitedLocation);
         return Ok(attractions);
     }
 
     [HttpGet("getRewards")]
-    public ActionResult<List<UserReward>> GetRewards([FromQuery] string userName)
+    public async Task<ActionResult<IEnumerable<UserReward>>> GetRewards([FromQuery] string userName)
     {
-        var rewards = _tourGuideService.GetUserRewards(GetUser(userName));
+        if (string.IsNullOrWhiteSpace(userName))
+            return BadRequest("Username is required");
+
+        var user = await GetUser(userName);
+        if (user == null)
+            return NotFound($"User '{userName}' not found");
+        var rewards =await _tourGuideService.GetUserRewards(user);
+
         return Ok(rewards);
     }
 
     [HttpGet("getTripDeals")]
-    public ActionResult<List<Provider>> GetTripDeals([FromQuery] string userName)
+    public async Task<ActionResult<IEnumerable<Provider>>> GetTripDeals([FromQuery] string userName)
+
     {
-        var deals = _tourGuideService.GetTripDeals(GetUser(userName));
+        if (string.IsNullOrWhiteSpace(userName))
+            return BadRequest("Username is required");
+
+        var user = await GetUser(userName);
+        if (user == null)
+            return NotFound($"User '{userName}' not found");
+
+        var deals = await _tourGuideService.GetTripDeals(user);
+ 
         return Ok(deals);
     }
 
-    private User GetUser(string userName)
+    private async Task<User> GetUser(string userName)
     {
-        return _tourGuideService.GetUser(userName);
+        var user= await _tourGuideService.GetUser(userName);
+        return user;
     }
 }

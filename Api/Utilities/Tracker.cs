@@ -31,12 +31,12 @@ public class Tracker
 
         while (!_cancellationTokenSource.Token.IsCancellationRequested)
         {
-            List<User> users = _tourGuideService.GetAllUsers();
-            _logger.LogDebug($"Begin Tracker. Tracking {users.Count} users.");
+            IEnumerable<User> users = await _tourGuideService.GetAllUsers();
+            _logger.LogDebug($"Begin Tracker. Tracking {users.Count()} users.");
 
             stopwatch.Start();
 
-            users.ForEach(u => _tourGuideService.TrackUserLocation(u));
+           // users.ForEach(u => _tourGuideService.TrackUserLocation(u));
 
             stopwatch.Stop();
 

@@ -9,12 +9,22 @@ namespace RewardCentral;
 
 public class RewardCentral
 {
-    public int GetAttractionRewardPoints(Guid attractionId, Guid userId)
-    {
-        int randomDelay = new Random().Next(1, 1000);
-        Thread.Sleep(randomDelay);
+    private static readonly SemaphoreSlim rewardLimiter = new(1000, 1000);
 
-        int randomInt = new Random().Next(1, 1000);
-        return randomInt;
+    public async Task<int> GetAttractionRewardPoints(Guid attractionId, Guid userId)
+    {
+        await rewardLimiter.WaitAsync();
+        try
+        {
+            int randomDelay = Random.Shared.Next(1, 1000);
+            await Task.Delay(randomDelay);
+
+            return Random.Shared.Next(1, 1000);
+        }
+        finally
+        {
+            rewardLimiter.Release();
+        }
     }
 }
+

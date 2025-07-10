@@ -8,14 +8,18 @@ namespace TripPricer;
 
 public class Provider
 {
-    public readonly string Name;
-    public readonly double Price;
-    public readonly Guid TripId;
+    public Guid TripId { get; set; }
+    public string ProviderName { get; set; }
+    public double Price { get; set; }
 
-    public Provider(Guid tripId, string name, double price)
+    // Constructor (optional)
+    public Provider(Guid tripId, string providerName, double price)
     {
-        this.Name = name;
-        this.TripId = tripId;
-        this.Price = price;
+        TripId = tripId;
+        ProviderName = providerName;
+        Price = price;
     }
+
+    // Parameterless constructor is required for model binding/serialization
+    public Provider() { }
 }

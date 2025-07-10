@@ -9,53 +9,68 @@ namespace TripPricer;
 
 public class TripPricer
 {
-    public List<Provider> GetPrice(string apiKey, Guid attractionId, int adults, int children, int nightsStay, int rewardsPoints)
+    // Semaphore limits concurrent access to 100 calls (adjust as needed)
+    private static readonly SemaphoreSlim _semaphore = new(initialCount: 100, maxCount: 100);
+
+    public async Task<IEnumerable<Provider>> GetPrice(
+        string apiKey,
+        Guid attractionId,
+        int adults,
+        int children,
+        int nightsStay,
+        int rewardsPoints)
     {
-        List<Provider> providers = new List<Provider>();
-        HashSet<string> providersUsed = new HashSet<string>();
+        await _semaphore.WaitAsync(); // wait for access
 
-        // Sleep to simulate some latency
-        Thread.Sleep(ThreadLocalRandom.Current.Next(1, 50));
-
-        for (int i = 0; i < 5; i++)
+        try
         {
-            int multiple = ThreadLocalRandom.Current.Next(100, 700);
-            double childrenDiscount = children / 3.0;
-            double price = multiple * adults + multiple * childrenDiscount * nightsStay + 0.99 - rewardsPoints;
+            List<Provider> providers = new();
+            HashSet<string> providersUsed = new();
 
-            if (price < 0.0)
+            // Non-blocking simulated delay
+            int delay = Random.Shared.Next(1, 50);
+            await Task.Delay(delay);
+
+            for (int i = 0; i < 10; i++)
             {
-                price = 0.0;
+                int multiple = Random.Shared.Next(100, 700);
+                double childrenDiscount = children / 3.0;
+                double price = multiple * adults + multiple * childrenDiscount * nightsStay + 0.99 - rewardsPoints;
+                price = Math.Max(0.0, price);
+
+                string provider;
+                do
+                {
+                    provider = GetProviderName(apiKey, adults);
+                } while (!providersUsed.Add(provider)); // only adds if not present
+
+                providers.Add(new Provider(attractionId, provider, price));
             }
 
-            string provider;
-            do
-            {
-                provider = GetProviderName(apiKey, adults);
-            } while (providersUsed.Contains(provider));
-
-            providersUsed.Add(provider);
-            providers.Add(new Provider(attractionId, provider, price));
+            return providers;
         }
-        return providers;
+        finally
+        {
+            _semaphore.Release(); // release the slot
+        }
     }
 
     public string GetProviderName(string apiKey, int adults)
     {
-        int multiple = ThreadLocalRandom.Current.Next(1, 10);
-
+        int multiple = Random.Shared.Next(0, 10);
         return multiple switch
         {
-            1 => "Holiday Travels",
-            2 => "Enterprize Ventures Limited",
-            3 => "Sunny Days",
-            4 => "FlyAway Trips",
-            5 => "United Partners Vacations",
-            6 => "Dream Trips",
-            7 => "Live Free",
-            8 => "Dancing Waves Cruselines and Partners",
-            9 => "AdventureCo",
-            _ => "Cure-Your-Blues",
-        };        
+            0 => "Holiday Travels",
+            1 => "Enterprize Ventures Limited",
+            2 => "Sunny Days",
+            3 => "FlyAway Trips",
+            4 => "United Partners Vacations",
+            5 => "Dream Trips",
+            6 => "Live Free",
+            7 => "Dancing Waves Cruselines and Partners",
+            8 => "AdventureCo",
+            9 => "Cure-Your-Blues",
+            _ => throw new InvalidOperationException("Unexpected provider index")
+        };
     }
 }

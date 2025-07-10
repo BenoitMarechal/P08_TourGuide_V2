@@ -1,5 +1,6 @@
 ﻿using GpsUtil.Location;
 using Microsoft.Extensions.Logging;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using TourGuide.LibrairiesWrappers.Interfaces;
@@ -44,58 +45,61 @@ public class TourGuideService : ITourGuideService
         AddShutDownHook();
     }
 
-    public List<UserReward> GetUserRewards(User user)
+    public async Task<IEnumerable<UserReward>> GetUserRewards(User user)
     {
         return user.UserRewards;
     }
 
-    public VisitedLocation GetUserLocation(User user)
+    public async Task<VisitedLocation> GetUserLocation(User user)
     {
-        return user.VisitedLocations.Any() ? user.GetLastVisitedLocation() : TrackUserLocation(user);
+        return user.VisitedLocations.Any() ? user.GetLastVisitedLocation() : await TrackUserLocation(user);
     }
 
-    public User GetUser(string userName)
+    public async Task<User> GetUser(string userName)
     {
         return _internalUserMap.ContainsKey(userName) ? _internalUserMap[userName] : null;
     }
 
-    public List<User> GetAllUsers()
+    public async Task<IEnumerable<User>> GetAllUsers()
     {
         return _internalUserMap.Values.ToList();
     }
 
-    public void AddUser(User user)
+    public async Task AddUser(User user)
     {
         if (!_internalUserMap.ContainsKey(user.UserName))
         {
-            _internalUserMap.Add(user.UserName, user);
+           _internalUserMap.Add(user.UserName, user);
         }
     }
 
-    public List<Provider> GetTripDeals(User user)
+    public async Task<IEnumerable<Provider> >GetTripDeals(User user)
     {
         int cumulativeRewardPoints = user.UserRewards.Sum(i => i.RewardPoints);
-        List<Provider> providers = _tripPricer.GetPrice(TripPricerApiKey, user.UserId,
+
+        IEnumerable<Provider> providers = await _tripPricer.GetPrice(TripPricerApiKey, user.UserId,
             user.UserPreferences.NumberOfAdults, user.UserPreferences.NumberOfChildren,
             user.UserPreferences.TripDuration, cumulativeRewardPoints);
+
         user.TripDeals = providers;
-        return providers;
+
+        return providers.ToImmutableList();
     }
 
-    public VisitedLocation TrackUserLocation(User user)
+    public async Task<VisitedLocation> TrackUserLocation(User user)
     {
-        VisitedLocation visitedLocation = _gpsUtil.GetUserLocation(user.UserId);
+        VisitedLocation visitedLocation =await _gpsUtil.GetUserLocation(user.UserId);
         user.AddToVisitedLocations(visitedLocation);
-        _rewardsService.CalculateRewards(user);
+        await _rewardsService.CalculateRewards(user);
         return visitedLocation;
     }
 
-    public List<Attraction> GetNearByAttractions(VisitedLocation visitedLocation)
+    public async Task<IEnumerable<Attraction>> GetNearByAttractions(VisitedLocation visitedLocation)
     {
         List<Attraction> nearbyAttractions = new ();
-        foreach (var attraction in _gpsUtil.GetAttractions())
+        foreach (var attraction in await _gpsUtil.GetAttractions())
         {
-            if (_rewardsService.IsWithinAttractionProximity(attraction, visitedLocation.Location))
+            if (await _rewardsService.IsWithinAttractionProximity(attraction, visitedLocation.Location))
             {
                 nearbyAttractions.Add(attraction);
             }
@@ -115,20 +119,20 @@ public class TourGuideService : ITourGuideService
     * 
     **********************************************************************************/
 
-    private void InitializeInternalUsers()
+    private async Task InitializeInternalUsers()
     {
         for (int i = 0; i < InternalTestHelper.GetInternalUserNumber(); i++)
         {
             var userName = $"internalUser{i}";
             var user = new User(Guid.NewGuid(), userName, "000", $"{userName}@tourGuide.com");
-            GenerateUserLocationHistory(user);
+            await GenerateUserLocationHistory(user);
             _internalUserMap.Add(userName, user);
         }
 
         _logger.LogDebug($"Created {InternalTestHelper.GetInternalUserNumber()} internal test users.");
     }
 
-    private void GenerateUserLocationHistory(User user)
+    private async Task GenerateUserLocationHistory(User user)
     {
         for (int i = 0; i < 3; i++)
         {

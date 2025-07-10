@@ -9,13 +9,13 @@ namespace TourGuide.Services.Interfaces
     {
         Tracker Tracker { get; }
 
-        void AddUser(User user);
-        List<User> GetAllUsers();
-        List<Attraction> GetNearByAttractions(VisitedLocation visitedLocation);
-        List<Provider> GetTripDeals(User user);
-        User GetUser(string userName);
-        VisitedLocation GetUserLocation(User user);
-        List<UserReward> GetUserRewards(User user);
-        VisitedLocation TrackUserLocation(User user);
+        Task AddUser(User user);
+        Task<IEnumerable<User>> GetAllUsers();
+        Task<IEnumerable<Attraction>> GetNearByAttractions(VisitedLocation visitedLocation);
+        Task<IEnumerable<Provider>> GetTripDeals(User user);
+           Task<User> GetUser(string userName);
+        Task<VisitedLocation> GetUserLocation(User user);
+        Task<IEnumerable<UserReward>> GetUserRewards(User user);
+        Task<VisitedLocation> TrackUserLocation(User user);
     }
 }

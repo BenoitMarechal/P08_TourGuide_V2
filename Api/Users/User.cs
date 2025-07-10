@@ -10,10 +10,28 @@ public class User
     public string PhoneNumber { get; set; }
     public string EmailAddress { get; set; }
     public DateTime LatestLocationTimestamp { get; set; }
-    public List<VisitedLocation> VisitedLocations { get; } = new List<VisitedLocation>();
-    public List<UserReward> UserRewards { get; } = new List<UserReward>();
+
+    //public IEnumerable<VisitedLocation> VisitedLocations { get; } = new List<VisitedLocation>();
+    private readonly List<VisitedLocation> _visitedLocations = new();
+    public IEnumerable<VisitedLocation> VisitedLocations => _visitedLocations;
+
+    //public IEnumerable<UserReward> UserRewards { get; } = new List<UserReward>();
+    private readonly List<UserReward> _userRewards = new();
+    public IEnumerable<UserReward> UserRewards => _userRewards;
+
+    //public IEnumerable<Provider> TripDeals { get; set; } = new List<Provider>();
+    private List<Provider> _tripDeals = new();
+    public IEnumerable<Provider> TripDeals
+    {
+        get => _tripDeals;
+        set => _tripDeals = value.ToList(); // defensively copy
+    }
+
+
+
+
+
     public UserPreferences UserPreferences { get; set; } = new UserPreferences();
-    public List<Provider> TripDeals { get; set; } = new List<Provider>();
 
     public User(Guid userId, string userName, string phoneNumber, string emailAddress)
     {
@@ -23,26 +41,29 @@ public class User
         EmailAddress = emailAddress;
     }
 
-    public void AddToVisitedLocations(VisitedLocation visitedLocation)
+    public async Task AddToVisitedLocations(VisitedLocation visitedLocation)
     {
-        VisitedLocations.Add(visitedLocation);
+        _visitedLocations.Add(visitedLocation);
     }
 
-    public void ClearVisitedLocations()
+    public async Task ClearVisitedLocations()
     {
-        VisitedLocations.Clear();
+        _visitedLocations.Clear();
     }
 
-    public void AddUserReward(UserReward userReward)
+    public async Task AddUserReward(UserReward userReward)
     {
-        if (!UserRewards.Exists(r => r.Attraction.AttractionName == userReward.Attraction.AttractionName))
+        if (!_userRewards.Exists(r => r.Attraction.AttractionName == userReward.Attraction.AttractionName))
         {
-            UserRewards.Add(userReward);
+            _userRewards.Add(userReward);
         }
     }
 
     public VisitedLocation GetLastVisitedLocation()
     {
-        return VisitedLocations[^1];
+        if (_visitedLocations.Count == 0)
+            throw new InvalidOperationException("No visited locations found.");
+
+        return _visitedLocations[^1];
     }
 }
