@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+
+  build:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v3
+  
+        - name: Setup .NET
+          uses: actions/setup-dotnet@v4
+          with:
+            dotnet-version: '7.0.x'
+  
+        - name: Restore dependencies
+          run: dotnet restore
+  
+        - name: Build solution
+          run: dotnet build --no-restore --configuration Release
+  
+        - name: Run tests
+          run: dotnet test --no-build --configuration Release --verbosity normal
+          
+        - name: Package DLLs
+          run: |
+            mkdir -p output
+            find . -type f -name "*.dll" -path "*/bin/Release/*" -exec cp --parents {} output/ \;
+            cd output
+            zip -r dlls.zip .
+    
+        - name: Upload DLLs artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: dlls-zip
+            path: output/dlls.zip
