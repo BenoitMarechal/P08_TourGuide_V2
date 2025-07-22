@@ -71,6 +71,7 @@ public class TourGuideController : ControllerBase
 
         return Ok(rewards);
     }
+    // pour pipeline: 
 
     [HttpGet("getTripDeals")]
     public async Task<ActionResult<IEnumerable<Provider>>> GetTripDeals([FromQuery] string userName)
